@@ -32,16 +32,17 @@ internal class Program
         using (var dbContext = new stockdbContext(dbOptions))
         {
             Console.WriteLine("Fetch DB Instrument.");
-            var instrument = dbContext.Instruments.ToList();
+            var instrument = dbContext.Type1Stocks.ToList();
 
             foreach (var instrumentItem in instrument) {
                 if (instrumentItem.InsCode != null){
                     Console.WriteLine("Fetch Redis Data for " + instrumentItem.InsCode);
+                    try { 
                     var redisItem = redis.GetById(instrumentItem.InsCode.ToString());
                     if (redisItem != null){
                         Console.WriteLine("Redis data for " + instrumentItem.InsCode  + " is " + redisItem.LastTrade?.LastTradePrice);
                         var instrumentHistory = new InstrumentHistory();
-                        instrumentHistory.Symbol = instrumentItem.Name;
+                        instrumentHistory.Symbol = instrumentItem.Symbol;
                         instrumentHistory.InsCode = instrumentItem.InsCode;
                         instrumentHistory.LastPrice = redisItem.LastTrade?.LastTradePrice;
                         instrumentHistory.Tmst = DateTime.Now;
@@ -50,6 +51,7 @@ internal class Program
                         dbContext.InstrumentHistories.Add(instrumentHistory);
                         dbContext.SaveChanges();
                     }
+                    }catch(Exception ex) { Console.WriteLine("Error " + ex.ToString()); }
                 }
             }
 
